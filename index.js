@@ -6,37 +6,37 @@ const puppeteer = require('puppeteer');
 * @returns {Array} Individual cookies separated by name and value
 */
 function cookieMonster(cookies) {
- return new Promise((resolve, reject) => {
-    try {
-      const crumbs = cookies.split(';').map(c => {
-        const crumb = c.split('=');
-        return { name: crumb[0], value: crumb[1] };
-      });
-    
-      resolve(crumbs);
-    } catch (err) {
-      reject(err);
-    }
- }) 
+  const crumbs = cookies.split(';').map(c => {
+    const crumb = c.split('=');
+    return { name: crumb[0], value: crumb[1] };
+  });
+  
+  return crumbs;
 }
 
 // Program
 async function main() {
 
-  // Initiate browser
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
- 
-  // Establish cookies
-  const cookies = await cookieMonster(require('./cookies'); 
-  cookies.forEach(async (c) => await page.setCookie(c));
+      // Initialize browser context
+      const browser = await puppeteer.launch({headless: false, slowMo: 2000});
+      const page = await browser.newPage();
+      
+      // Establish cookies
+      const cookies = cookieMonster(require('./cookies')); 
+      cookies.forEach(async (c) => await page.setCookie(c));
+     
+      // Enable JavaScript
+      await page.setJavaScriptEnabled(true);
+      
+      // Capture DnD Beyond Image
+      await page.goto('https://www.dndbeyond.com/');
+      await page.reload('https://www.dndbeyond.com');
+      await page.goto('https://www.dndbeyond.com/search?q=goblin'); 
 
-  // Capture DnD Beyond Image
-  await page.goto('https://dndbeyond.com/');
-  await page.screenshot({path: 'snap.png'});
-
-  // Finalize browser
-  await browser.close();
+      await page.screenshot({path: 'snap.png'});
+      
+      // Finalize browser
+      await browser.close();
 
 }
 

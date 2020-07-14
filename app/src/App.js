@@ -12,6 +12,8 @@ import FormControl from 'react-bootstrap/FormControl';
 import Alert from 'react-bootstrap/Alert';
 import Accordion from 'react-bootstrap/Accordion';
 
+import axios from 'axios';
+
 function Authenticator() {
   const [ authenticated, setAuthenticated ] = useState(false); 
 
@@ -107,8 +109,10 @@ function MonsterAdder({addMonster}) {
     }
 
     if(name) {
-      addMonster(name);
-      setName('');
+      axios.get(`http://localhost:8008/${name}`).then(({data}) => {
+        addMonster(name, data);
+        setName('');
+      }) 
     }
   }
 
@@ -180,8 +184,8 @@ function Monster({ name, block, remove}) {
 function App() {
   const [monsters, setMonsters] = useState([]);
 
-  const addMonster = (name) => {
-    setMonsters([...monsters, {name, block: '<p style="color: red">this is a stat block</p>'}]);
+  const addMonster = (name, block) => {
+    setMonsters([...monsters, { name, block }]);
   }
 
   const removeMonster = (idx) => {

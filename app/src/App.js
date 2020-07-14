@@ -5,96 +5,45 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
-import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import InputGroup from 'react-bootstrap/InputGroup';
 import FormControl from 'react-bootstrap/FormControl';
 import Alert from 'react-bootstrap/Alert';
 import Accordion from 'react-bootstrap/Accordion';
+import Spinner from 'react-bootstrap/Spinner';
 
 import axios from 'axios';
 
-function Authenticator() {
-  const [ authenticated, setAuthenticated ] = useState(false); 
+function SheetRequest() {
+  const [ sent, setSent ] = useState(false); 
+  const [ message, setMessage ] = useState(''); 
+  const [ email, setEmail ] = useState('');
 
-  const [user, setUser] = useState('');
-  const [pass, setPass] = useState('');
-  const [service, setService] = useState('Google');
-
-  const [message, setMessage] = useState('');
-
-  const changeUser = e => {
-    setUser(e.target.value);
-  }
-
-  const changePass = e => {
-    setPass(e.target.value);
-  }
-
-  const changeService = e => {
-    setService(e.target.value); 
-  }
+  const changeEmail = e => setEmail(e.target.value);
 
   const connect = () => {
-    if(!user) {
-      setMessage('Invalid username');
-      return false;
+    if(email && email.includes('@')) {
+      setMessage('Encounter sheet is being delivered'); 
+      setSent(true); 
+      setEmail('');
+    } else {
+      setMessage('Please enter a valid email.');
+      setSent(false);
     }
-
-    if(!pass) {
-      setMessage('Invalid password');
-      return false;
-    }
-
-    setAuthenticated(true);
-  }
-
+  };
+  
   return (
     <Card className="mb-1 mt-1">
-      <Card.Header>Connect to D&D Beyond</Card.Header>
       <Card.Body>
-        {
-          authenticated ? 
-           <h5>Connected Successfully</h5> 
-          :
-          ( 
-             <div> 
-                { message && <Alert variant="danger">{message}</Alert> }
-                <Form>
-                  <Form.Group controlId="formEmail">
-                    <Form.Label>Email</Form.Label>
-                    <Form.Control type="email" placeholder="Enter email" value={user} onChange={changeUser} />
-                  </Form.Group>
-        
-                  <Form.Group controlId="formPassword">
-                    <Form.Label>Password</Form.Label>
-                    <Form.Control type="password" placeholder="Enter password" value={pass} onChange={changePass}/>
-                  </Form.Group>
-
-                  <Form.Group>
-                    <Form.Label>Account Type</Form.Label>
-                    <Form.Control as="select" custom onChange={changeService} value={service}>
-                      <option>Google</option>
-                      <option>Twitch</option>
-                      <option>Apple</option>
-                    </Form.Control>
-                  </Form.Group>
-
-                  <Button variant="primary" onClick={connect} >Connect</Button>
-                </Form>
-              </div>
-            )
-        }
-      </Card.Body>
-    </Card>
-  );
-}
-
-function Actions() {
-  return (
-    <Card>
-      <Card.Body>
-        <Button variant="info">Download Printable</Button>
+        <div> 
+          { message && <Alert variant={sent ? 'success' : 'danger'}>{message}</Alert> }
+            <InputGroup>
+                <FormControl type="email" placeholder="Enter email" value={email} onChange={changeEmail} />
+                <InputGroup.Append>
+                  <Button variant="primary" onClick={connect}>Send Sheet</Button>
+                </InputGroup.Append>
+            </InputGroup>
+        </div>
       </Card.Body>
     </Card>
   );
@@ -109,10 +58,8 @@ function MonsterAdder({addMonster}) {
     }
 
     if(name) {
-      axios.get(`http://localhost:8008/${name}`).then(({data}) => {
-        addMonster(name, data);
-        setName('');
-      }) 
+      addMonster(name);
+      setName('');
     }
   }
 
@@ -144,17 +91,33 @@ function RemoveButton({onClick}) {
   );
 }
 
-function Monster({ name, block, remove}) {
+function Monster({ name, remove }) {
+
+  const [ block, setBlock ] = useState(false);
 
   const statBlock = useRef();
 
   useEffect(() => {
-    const { current } = statBlock; 
-    
-    if(current) {
-      current.innerHTML = block; 
-    }
-  }, [statBlock])
+    if(!block) {
+      axios.get(`http://localhost:8008/${name}`) 
+        .then(({data}) => {
+          const { current } = statBlock; 
+      
+          if(current) {
+            
+            setBlock(true);
+
+            current.innerHTML = data;
+            [...current.querySelectorAll('a')]
+              .forEach(lnk => {
+                lnk.setAttribute('href', `https://dndbeyond.com${lnk.getAttribute('href')}`);
+                lnk.setAttribute('target', '_blank');
+              });
+
+          }
+        })
+     }
+  }, [statBlock, setBlock, block, name])
 
   return (
     <Accordion>
@@ -174,7 +137,9 @@ function Monster({ name, block, remove}) {
           </Container>
         </Card.Header>
         <Accordion.Collapse eventKey="block">
-          <Card.Body ref={statBlock}>{block}</Card.Body>
+          <Card.Body ref={statBlock} className={block ? '' : 'd-flex justify-content-center p-2'}>
+            { !block && <Spinner animation="border" role="loading" /> }
+          </Card.Body>
         </Accordion.Collapse>
       </Card>
     </Accordion>
@@ -185,7 +150,7 @@ function App() {
   const [monsters, setMonsters] = useState([]);
 
   const addMonster = (name, block) => {
-    setMonsters([...monsters, { name, block }]);
+    setMonsters([...monsters, { name }]);
   }
 
   const removeMonster = (idx) => {
@@ -197,15 +162,14 @@ function App() {
      <Container fluid className="pt-1">
         <Row>
           <Col sm={6} md={5} lg={4}>
-            <Authenticator />
-            <Actions />
+            <SheetRequest />
           </Col>
           <Col>
             <MonsterAdder addMonster={addMonster}/> 
             {
-              monsters.map(({name, block}, i) => {
+              monsters.map(({name}, i) => {
                 const key = `monster-${name}-${i}`; 
-                return <Monster key={key} name={name} block={block} remove={() => removeMonster(i)}/>
+                return <Monster key={key} name={name} remove={() => removeMonster(i)}/>
               })
             }
           </Col>

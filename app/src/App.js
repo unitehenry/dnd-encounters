@@ -32,7 +32,7 @@ function SheetRequest({ monsters }) {
 
     if(email && email.includes('@')) {
       const body = { monsters: monsters.map((mon) => mon.name), email, encounter: name };
-      axios.post('http://localhost:8008/request-sheet', body)
+      axios.post('/request-sheet', body)
         .then(({ data }) => console.log(data))
 
       setMessage('Encounter sheet is being delivered'); 
@@ -116,7 +116,7 @@ function Monster({ name, remove }) {
 
   useEffect(() => {
     if(!block) {
-      axios.get(`http://localhost:8008/${name}`) 
+      axios.get(`/${name}`) 
         .then(({data}) => {
           
           const { current } = statBlock; 
@@ -128,6 +128,9 @@ function Monster({ name, remove }) {
           
           }
         
+        })
+        .catch(err => {
+          err && alert(err);
         })
      }
   }, [statBlock, setBlock, block, name])

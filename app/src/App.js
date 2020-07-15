@@ -14,18 +14,32 @@ import Spinner from 'react-bootstrap/Spinner';
 
 import axios from 'axios';
 
-function SheetRequest() {
+function SheetRequest({ monsters }) {
   const [ sent, setSent ] = useState(false); 
   const [ message, setMessage ] = useState(''); 
   const [ email, setEmail ] = useState('');
+  const [ name, setName ] = useState('');
 
+  const changeName = e => setName(e.target.value);
   const changeEmail = e => setEmail(e.target.value);
 
   const connect = () => {
+    if(!name) {
+      setMessage('Name your encounter');
+      setSent(false);
+      return false;
+    }
+
     if(email && email.includes('@')) {
+      const body = { monsters: monsters.map((mon) => mon.name), email, encounter: name };
+      axios.post('http://localhost:8008/request-sheet', body)
+        .then(({ data }) => console.log(data))
+
       setMessage('Encounter sheet is being delivered'); 
       setSent(true); 
       setEmail('');
+      setName('');
+
     } else {
       setMessage('Please enter a valid email.');
       setSent(false);
@@ -34,9 +48,12 @@ function SheetRequest() {
   
   return (
     <Card className="mb-1 mt-1">
+      <Card.Header>D&D Encounter Stat Block Sheet Builder</Card.Header> 
       <Card.Body>
         <div> 
           { message && <Alert variant={sent ? 'success' : 'danger'}>{message}</Alert> }
+            <FormControl type="text" placeholder="Encounter name" value={name} onChange={changeName} />
+            <br />
             <InputGroup>
                 <FormControl type="email" placeholder="Enter email" value={email} onChange={changeEmail} />
                 <InputGroup.Append>
@@ -74,7 +91,7 @@ function MonsterAdder({addMonster}) {
         <InputGroup>
           <FormControl aria-label="Monster Name" value={name} onChange={changeName} onKeyUp={submit} />
           <InputGroup.Append>
-            <Button variant="primary" onClick={submit}>Add Monster</Button>
+            <Button variant="secondary" onClick={submit}>Add Monster</Button>
           </InputGroup.Append>
         </InputGroup>
       </Card.Body>
@@ -101,20 +118,16 @@ function Monster({ name, remove }) {
     if(!block) {
       axios.get(`http://localhost:8008/${name}`) 
         .then(({data}) => {
+          
           const { current } = statBlock; 
       
           if(current) {
-            
+
             setBlock(true);
-
             current.innerHTML = data;
-            [...current.querySelectorAll('a')]
-              .forEach(lnk => {
-                lnk.setAttribute('href', `https://dndbeyond.com${lnk.getAttribute('href')}`);
-                lnk.setAttribute('target', '_blank');
-              });
-
+          
           }
+        
         })
      }
   }, [statBlock, setBlock, block, name])
@@ -122,22 +135,14 @@ function Monster({ name, remove }) {
   return (
     <Accordion>
       <Card className="mb-1 mt-1">
-        <Card.Header>
-          <Container>
-            <Row> 
-              <Col className="d-flex align-items-center justify-content-start">
-                <Accordion.Toggle as="dt" eventKey="block" style={{cursor: 'pointer'}}>
-                  {name}
-                </Accordion.Toggle>
-              </Col>
-              <Col className="d-flex align-items-center justify-content-end">
-                <RemoveButton onClick={remove} />         
-              </Col>
-            </Row>
-          </Container>
+        <Card.Header className="d-flex justify-content-between align-items-center">
+          <Accordion.Toggle as="dt" eventKey="block" style={{cursor: 'pointer'}}>
+            <h5 className="m-0">{name}</h5>
+          </Accordion.Toggle>
+          <RemoveButton onClick={remove} />         
         </Card.Header>
         <Accordion.Collapse eventKey="block">
-          <Card.Body ref={statBlock} className={block ? '' : 'd-flex justify-content-center p-2'}>
+          <Card.Body ref={statBlock} className="d-flex justify-content-center p-2">
             { !block && <Spinner animation="border" role="loading" /> }
           </Card.Body>
         </Accordion.Collapse>
@@ -162,7 +167,7 @@ function App() {
      <Container fluid className="pt-1">
         <Row>
           <Col sm={6} md={5} lg={4}>
-            <SheetRequest />
+            <SheetRequest monsters={monsters} />
           </Col>
           <Col>
             <MonsterAdder addMonster={addMonster}/> 

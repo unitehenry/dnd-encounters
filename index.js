@@ -2,9 +2,11 @@
 const puppeteer = require('puppeteer');
 const app = require('express')();
 const port = process.env.PORT || 8008;
+const bodyParser = require('body-parser')
 const cors = require('cors');
 
 app.use(cors());
+app.use(bodyParser.json());
 
 /** 
 * Break existing cookies into individual pieces for puppeteer to use 
@@ -24,12 +26,12 @@ function getMonster(monster) {
 
       return new Promise(async (resolve, reject) => {
         // Initialize browser context
-        const browser = await puppeteer.launch({headless: false, slowMo: 2000});
+        const browser = await puppeteer.launch({headless: false, slowMo: 700});
         const page = await browser.newPage();
         
         // Establish cookies
-        const cookies = cookieMonster(require('./cookies')); 
-        cookies.forEach(async (c) => await page.setCookie(c));
+        // const cookies = cookieMonster(require('./cookies')); 
+        // cookies.forEach(async (c) => await page.setCookie(c));
      
         // Enable JavaScript
         await page.setJavaScriptEnabled(true);
@@ -63,6 +65,11 @@ function getMonster(monster) {
           convert(node);
           [...node.querySelectorAll('*')].forEach(el => convert(el));
           node.querySelector('div.mon-stat-block__name').style.margin = '10px 0';
+          [...node.querySelectorAll('a')]
+            .forEach(link => {
+              link.setAttribute('href', `https://dndbeyond.com${link.getAttribute('href')}`);
+              link.setAttribute('target', '_blank');
+            })
 
           return node.outerHTML;
 
@@ -78,6 +85,26 @@ function getMonster(monster) {
 
 app.get('/:monster', (req, res) => {
   getMonster(req.params.monster).then(block => res.send(block));
+})
+
+app.post('/request-sheet', async (req, res) => {
+  const { monsters, email, encounter } = req.body;
+
+  async function gatherBlocks() {
+    return new Promise((resolve) => {
+      const blocks = [];
+
+      monsters.forEach(async (mon, i) => {
+        const block = await getMonster(mon);
+        blocks.push(block);
+        if(i + 1 === monsters.length) { resolve(blocks) }
+      })
+    }) 
+  }
+
+  const blocks = await gatherBlocks();
+
+  res.send({ blocks, email, encounter });
 })
 
 app.listen(port, () => console.log(`Monster Server running on PORT: ${port}`));

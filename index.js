@@ -34,8 +34,8 @@ function getMonster(monster) {
           const page = await browser.newPage();
           
           // Establish cookies
-          // const cookies = cookieMonster(require('./cookies')); 
-          // cookies.forEach(async (c) => await page.setCookie(c));
+          const cookies = cookieMonster(require('./cookies')); 
+          cookies.forEach(async (c) => await page.setCookie(c));
      
           // Enable JavaScript
           await page.setJavaScriptEnabled(true);

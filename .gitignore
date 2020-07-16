@@ -1,5 +1,4 @@
 node_modules
 *.swp
-cookies.js
 .DS_Store
 build

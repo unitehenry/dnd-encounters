@@ -26,8 +26,8 @@ function SheetRequest({ monsters }) {
     axios.post('/request-sheet', body)
       .then(({ data }) => {
         let filename = name.toLowerCase();
-        filename = name.replace(/[^\w\s]/gi, '');
-        filename = name.split(' ').join('-');
+        filename = filename.replace(/[^\w\s]/gi, '');
+        filename = filename.split(' ').join('-');
 
         const blob = new Blob([data], {type: 'text/html'});
         const url = URL.createObjectURL(blob);

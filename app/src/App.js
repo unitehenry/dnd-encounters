@@ -15,35 +15,40 @@ import Spinner from 'react-bootstrap/Spinner';
 import axios from 'axios';
 
 function SheetRequest({ monsters }) {
-  const [ sent, setSent ] = useState(false); 
   const [ message, setMessage ] = useState(''); 
-  const [ email, setEmail ] = useState('');
   const [ name, setName ] = useState('');
+  const [ requested, setRequested ] = useState(false);
 
   const changeName = e => setName(e.target.value);
-  const changeEmail = e => setEmail(e.target.value);
 
   const connect = () => {
-    if(!name) {
-      setMessage('Name your encounter');
-      setSent(false);
-      return false;
-    }
+    const body = { monsters: monsters.map((mon) => mon.name) };
+    axios.post('/request-sheet', body)
+      .then(({ data }) => {
+        let filename = name.toLowerCase();
+        filename = name.replace(/[^\w\s]/gi, '');
+        filename = name.split(' ').join('-');
 
-    if(email && email.includes('@')) {
-      const body = { monsters: monsters.map((mon) => mon.name), email, encounter: name };
-      axios.post('/request-sheet', body)
-        .then(({ data }) => console.log(data))
+        const blob = new Blob([data], {type: 'text/html'});
+        const url = URL.createObjectURL(blob);
+        const dwn = document.createElement('a');
+        dwn.setAttribute('href', url);
+        dwn.setAttribute('download', `${filename}.html`);
+        dwn.click();
 
-      setMessage('Encounter sheet is being delivered'); 
-      setSent(true); 
-      setEmail('');
-      setName('');
+        setName('');
+        setMessage('');
+        setRequested(false);
+      })
+      .catch(() => {
+        setMessage('Unable to create sheet');
+        setTimeout(() => setMessage(''), 2000);
+        setRequested(false);
+      })
 
-    } else {
-      setMessage('Please enter a valid email.');
-      setSent(false);
-    }
+    setRequested(true);
+    setMessage('Encounter sheet is being created...'); 
+
   };
   
   return (
@@ -51,13 +56,11 @@ function SheetRequest({ monsters }) {
       <Card.Header>D&D Encounter Stat Block Sheet Builder</Card.Header> 
       <Card.Body>
         <div> 
-          { message && <Alert variant={sent ? 'success' : 'danger'}>{message}</Alert> }
-            <FormControl type="text" placeholder="Encounter name" value={name} onChange={changeName} />
-            <br />
+          { message && <Alert variant="secondary">{message}</Alert> }
             <InputGroup>
-                <FormControl type="email" placeholder="Enter email" value={email} onChange={changeEmail} />
+                <FormControl type="text" placeholder="Encounter name" value={name} onChange={changeName} disabled={requested} />
                 <InputGroup.Append>
-                  <Button variant="primary" onClick={connect}>Send Sheet</Button>
+                  <Button variant="primary" onClick={connect} disabled={!name || requested}>Generate Sheet</Button>
                 </InputGroup.Append>
             </InputGroup>
         </div>
@@ -111,12 +114,13 @@ function RemoveButton({onClick}) {
 function Monster({ name, remove }) {
 
   const [ block, setBlock ] = useState(false);
+  const [ error, setError ] = useState(false);
 
   const statBlock = useRef();
 
   useEffect(() => {
     if(!block) {
-      axios.get(`/${name}`) 
+      axios.get(`http://localhost:8008/${name}`) 
         .then(({data}) => {
           
           const { current } = statBlock; 
@@ -129,8 +133,8 @@ function Monster({ name, remove }) {
           }
         
         })
-        .catch(err => {
-          err && alert(err);
+        .catch(() => {
+          setError(true); 
         })
      }
   }, [statBlock, setBlock, block, name])
@@ -146,7 +150,14 @@ function Monster({ name, remove }) {
         </Card.Header>
         <Accordion.Collapse eventKey="block">
           <Card.Body ref={statBlock} className="d-flex justify-content-center p-2">
-            { !block && <Spinner animation="border" role="loading" /> }
+            { !block && 
+              (
+                error ? 
+                  <Alert variant="danger" className="m-0 w-100 text-center">{'Couldn\'t retrieve stat block.'}</Alert> 
+                  : 
+                  <Spinner animation="border" role="loading" />
+               ) 
+             }
           </Card.Body>
         </Accordion.Collapse>
       </Card>

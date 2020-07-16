@@ -109,31 +109,41 @@ app.get('/:monster', (req, res) => {
 })
 
 app.post('/request-sheet', async (req, res) => {
-  const { monsters, email, encounter } = req.body;
-
-  async function gatherBlocks() {
-    return new Promise((resolve) => {
-      const blocks = [];
-
-      monsters.forEach(async (mon, i) => {
-        const block = await getMonster(mon);
-        blocks.push(block);
-        if(i + 1 === monsters.length) { resolve(blocks) }
-      })
-    }) 
-  }
-
-  const blocks = await gatherBlocks();
   
-  let sheet = '';
-  blocks.forEach(b => sheet += b);
- 
-  let filename = encounter.toLowerCase();
-  filename = filename.replace(/[^\w\s]/gi, '');
-  filename = filename.split(' ').join('-');
+      const { monsters } = req.body;
 
-  fs.writeFile(`${filename}.html`, sheet, (err) => {err && console.error(err)});
-  res.send({ blocks, email, encounter });
+      async function gatherBlocks() {
+        return new Promise((resolve) => {
+          
+          const blocks = [];
+
+          monsters.forEach(async (mon, i) => {
+            try {
+              const block = await getMonster(mon);
+              blocks.push(block);
+              if(i + 1 === monsters.length) { resolve(blocks) }
+            } catch(e) {
+              res.sendStatus(500);
+            }
+          })
+
+        }) 
+      }
+
+      const blocks = await gatherBlocks();
+
+      let sheet = '';
+      blocks.forEach(b => sheet += b);
+ 
+      fs.writeFile(`encounter.html`, sheet, (err) => {
+      
+        err && console.error(err);
+
+        res.download(`${__dirname}/encounter.html`, (dErr) => {
+          fs.unlink(`${__dirname}/encounter.html`, (uErr) => {err && console.error(uErr)});
+        });
+
+      });
 
 })
 

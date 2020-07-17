@@ -1,6 +1,6 @@
 # D&D Encounter Stat Block Generator
 
-A simple nodejs app that accesses [D&D Byond](https://dndbeyond.com/) content and gets the stat blocks of monsters for your encounters. It uses [puppeteer](https://github.com/puppeteer/puppeteer) to autmomate browsing the D&D Beyond app. It only allows access to basic content, but you can manually [run this app locally](#running-locally) and [provide your cookies](#accessing-premium-content) to let the app act on your behalf.
+A simple nodejs app that accesses [D&D Beyond](https://dndbeyond.com/) content and gets the stat blocks of monsters for your encounters. It uses [puppeteer](https://github.com/puppeteer/puppeteer) to autmomate browsing the D&D Beyond app. It only allows access to basic content, but you can manually [run this app locally](#running-locally) and [provide your cookies](#accessing-premium-content) to let the app act on your behalf.
 
 ## Running Locally
 

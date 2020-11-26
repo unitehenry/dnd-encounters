@@ -50,7 +50,13 @@ function SheetRequest({ monsters }) {
     setMessage('Encounter sheet is being created...'); 
 
   };
-  
+ 
+  const createAuth = () => {
+    axios.get('http://localhost:8008/dndbeyond/auth', (res) => {
+      alert(res.data); 
+    }); 
+  }
+
   return (
     <Card className="mb-1 mt-1">
       <Card.Header>D&D Encounter Stat Block Sheet Builder</Card.Header> 
@@ -64,6 +70,8 @@ function SheetRequest({ monsters }) {
                 </InputGroup.Append>
             </InputGroup>
         </div>
+        <br />
+        <Button onClick={createAuth}>Authenticate</Button>
       </Card.Body>
     </Card>
   );

@@ -100,6 +100,22 @@ function getMonster(monster) {
 
 }
 
+app.get('/dndbeyond/auth', async (req, res) => {
+  const browser = await puppeteer.launch({headless: false});
+  const page = await browser.newPage();
+  page.goto('https://dndbeyond.com/sign-in');
+  page.on('load', async () => {
+    const cookies = await page.$eval('body', (el) => {
+      return document.cookie; 
+    });
+
+    if(page.url() === 'https://dndbeyond.com/') {
+      console.log(cookies); 
+      res.send(cookies);
+    }
+  });
+})
+
 app.get('/:monster', (req, res) => {
   getMonster(req.params.monster)
     .then(block => res.send(block))

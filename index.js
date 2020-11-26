@@ -106,7 +106,7 @@ app.get('/dndbeyond/auth', async (req, res) => {
   page.goto('https://dndbeyond.com/sign-in');
   page.on('load', async () => {
     const cookies = await page.$eval('body', (el) => {
-      return document.cookie; 
+      return (document.cookie);
     });
 
     if(page.url() === 'https://dndbeyond.com/') {
